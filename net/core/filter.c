@@ -7341,6 +7341,8 @@ static const struct bpf_func_proto *
 sock_ops_func_proto(enum bpf_func_id func_id, const struct bpf_prog *prog)
 {
 	switch (func_id) {
+	case BPF_FUNC_get_netns_cookie:
+		return &bpf_get_netns_cookie_sock_ops_proto;
 	case BPF_FUNC_setsockopt:
 		return &bpf_sock_ops_setsockopt_proto;
 	case BPF_FUNC_getsockopt:
