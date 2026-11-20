@@ -42,8 +42,8 @@ jobs:
       - name: Install Build Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y bc bison build-essential ccache cpio flex git kmod \
-            libncurses5-dev libssl-dev rsync zip unzip wget curl ca-certificates \
+          sudo apt-get install -y bc bison build-essential ccache cpio dos2unix flex git kmod \
+            libncurses5-dev libssl-dev libelf-dev zlib1g-dev rsync zip unzip wget curl ca-certificates \
             gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu device-tree-compiler
 
       # -----------------------------------------------------------------------
