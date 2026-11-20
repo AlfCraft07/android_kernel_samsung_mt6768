@@ -68,19 +68,19 @@ jobs:
           cd ~/AnyKernel3
           cat > anykernel.sh << 'EOF'
           #!/sbin/sh
-          # AnyKernel3 Script for a13ve
+          # AnyKernel3 Script for f22
           
           ## AnyKernel setup
           # begin properties
           properties() { '
-          kernel.string=Legion Kernel for mt6768 platform - Built for a13ve (SM-A137F)
+          kernel.string=slmkernel for mt6768 platform - Built for f22 (SM-E225F)
           do.devicecheck=0
           do.modules=0
           do.systemless=1
           do.cleanup=1
           do.cleanuponabort=0
-          device.name1=a13ve
-          device.name2=SM-A137F
+          device.name1=f22
+          device.name2=SM-E225F
           supported.versions=11-17
           supported.patchlevels=
           '; } # end properties
@@ -133,17 +133,28 @@ jobs:
           # 2. Clean
           rm -rf out && mkdir -p out
 
-          # 3. Compile (KERNEL_MAKE_CMD)
+          # 3. Build Base Config (TARGET_KERNEL_CONFIG)
+          echo "--> Generating Base Config: vendor/samsung/mt6768_slm_defconfig"
+          make O=out vendor/mt6768_slm_defconfig
+
+          # 4. Merge Fragment (The 'kernel.mk' Logic)
+          echo "--> Merging Fragments..."
+          # This is the exact script Lineage uses to merge configs
+          scripts/kconfig/merge_config.sh -m -O out out/.config arch/arm64/configs/vendor/f22.config
+          scripts/kconfig/merge_config.sh -m -O out out/.config arch/arm64/configs/vendor/battery.config
+          make O=out olddefconfig
+          
+          # 5. Compile (KERNEL_MAKE_CMD)
           # For devices with CONFIG_BUILD_ARM64_DT_OVERLAY=y (overlay mode):
           # - Build Image.gz (not Image.gz-dtb) to avoid dtbs dependency
           # - Image.gz-dtb depends on 'dtbs' target which tries to build overlays
           # - Overlays are applied by bootloader at runtime, not appended to kernel
           # - This follows LineageOS methodology for overlay-enabled devices
-          
+
           echo "--> Building kernel..."
           echo "--> Compiling Image.gz..."
           set -o pipefail
-          make O=out a13ve_defconfig KCFLAGS=-w CONFIG_SECTION_MISMATCH_WARN_ONLY=y -j$(nproc) Image.gz 2>&1 | tee build.log
+          make O=out mt6768_slm_defconfig KCFLAGS=-w CONFIG_SECTION_MISMATCH_WARN_ONLY=y -j$(nproc) Image.gz 2>&1 | tee build.log
           BUILD_STATUS=$?
           
           if [ $BUILD_STATUS -ne 0 ]; then
