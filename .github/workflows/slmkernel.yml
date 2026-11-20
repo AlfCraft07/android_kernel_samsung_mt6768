@@ -134,14 +134,14 @@ jobs:
           rm -rf out && mkdir -p out
 
           # 3. Build Base Config (TARGET_KERNEL_CONFIG)
-          echo "--> Generating Base Config: vendor/samsung/mt6768_slm_defconfig"
-          make O=out vendor/mt6768_slm_defconfig
+          echo "--> Generating Base Config: mt6768_slm_defconfig"
+          make O=out mt6768_slm_defconfig
 
           # 4. Merge Fragment (The 'kernel.mk' Logic)
           echo "--> Merging Fragments..."
           # This is the exact script Lineage uses to merge configs
-          scripts/kconfig/merge_config.sh -m -O out out/.config arch/arm64/configs/vendor/f22.config
-          scripts/kconfig/merge_config.sh -m -O out out/.config arch/arm64/configs/vendor/battery.config
+          scripts/kconfig/merge_config.sh -m -O out out/.config arch/arm64/configs/f22.config
+          scripts/kconfig/merge_config.sh -m -O out out/.config arch/arm64/configs/battery.config
           make O=out olddefconfig
           
           # 5. Compile (KERNEL_MAKE_CMD)
@@ -177,7 +177,7 @@ jobs:
           
           # Create custom README for the ZIP
           cat > README.md << 'EOF'
-          # Legion Kernel for a13ve
+          # slmkernel for f22
           
           ## What's Included
           - slmkernel for f22 with 5.15 BPF backports
