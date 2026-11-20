@@ -114,47 +114,43 @@ jobs:
       # -----------------------------------------------------------------------
       - name: Compile Kernel
         run: |
-          # 1. Setup Environment Variables (mimicking BoardConfig.mk)
+          # Fix CRLF line endings in vendor Kconfig files
+          find drivers/sensorhub -name "Kconfig*" -exec dos2unix {} + 2>/dev/null || true
+          # 1. Setup Environment Variables
           export PATH=~/toolchains/clang/bin:$PATH
           export ARCH=arm64
           export SUBARCH=arm64
-          export CC=clang
-          export CROSS_COMPILE=aarch64-linux-gnu-
-          export CROSS_COMPILE64=aarch64-linux-gnu-
-          export CROSS_COMPILE_ARM32=arm-linux-gnueabi-
-          export CLANG_TRIPLE=aarch64-linux-gnu-
-          export KCFLAGS=-w
-          export CONFIG_SECTION_MISMATCH_WARN_ONLY=y
           
-          # Flags found in kernel.mk
-          export LLVM=1
-          export LLVM_IAS=1
-          
-          # 2. Clean
+          MAKE_ARGS=(
+            ARCH=arm64
+            SUBARCH=arm64
+            O=out
+            CC=clang
+            CROSS_COMPILE=aarch64-linux-gnu-
+            CROSS_COMPILE64=aarch64-linux-gnu-
+            CROSS_COMPILE_ARM32=arm-linux-gnueabi-
+            CLANG_TRIPLE=aarch64-linux-gnu-
+            LLVM=1
+            LLVM_IAS=1
+            KCFLAGS="-w"
+            CONFIG_SECTION_MISMATCH_WARN_ONLY=y
+          )
+          # 2. Clean output dir
           rm -rf out && mkdir -p out
-
-          # 3. Build Base Config (TARGET_KERNEL_CONFIG)
+          # 3. Build Base Config
           echo "--> Generating Base Config: mt6768_slm_defconfig"
-          make O=out mt6768_slm_defconfig
-
-          # 4. Merge Fragment (The 'kernel.mk' Logic)
+          make "${MAKE_ARGS[@]}" mt6768_slm_defconfig
+          # 4. Merge Fragments
           echo "--> Merging Fragments..."
-          # This is the exact script Lineage uses to merge configs
           scripts/kconfig/merge_config.sh -m -O out out/.config arch/arm64/configs/f22.config
           scripts/kconfig/merge_config.sh -m -O out out/.config arch/arm64/configs/battery.config
-          make O=out olddefconfig
+          make "${MAKE_ARGS[@]}" olddefconfig
           
-          # 5. Compile (KERNEL_MAKE_CMD)
-          # For devices with CONFIG_BUILD_ARM64_DT_OVERLAY=y (overlay mode):
-          # - Build Image.gz (not Image.gz-dtb) to avoid dtbs dependency
-          # - Image.gz-dtb depends on 'dtbs' target which tries to build overlays
-          # - Overlays are applied by bootloader at runtime, not appended to kernel
-          # - This follows LineageOS methodology for overlay-enabled devices
-
+          # 5. Compile Image.gz (defconfig removed from targets)
           echo "--> Building kernel..."
           echo "--> Compiling Image.gz..."
           set -o pipefail
-          make O=out mt6768_slm_defconfig KCFLAGS=-w CONFIG_SECTION_MISMATCH_WARN_ONLY=y -j$(nproc) Image.gz 2>&1 | tee build.log
+          make -j$(nproc) "${MAKE_ARGS[@]}" Image.gz 2>&1 | tee build.log
           BUILD_STATUS=$?
           
           if [ $BUILD_STATUS -ne 0 ]; then
