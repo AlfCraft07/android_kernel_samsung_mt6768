@@ -27,6 +27,11 @@ sched_trace(sched_eas_energy_calc);
 sched_trace(sched_log);
 
 #endif
+
+/* Forward declarations to fix -Wvisibility */
+struct hmp_statisic;
+struct clb_stats;
+
 /*
  * MT: Tracepoint for system overutilized indicator
  */
